@@ -19,9 +19,7 @@
   <!-- Products -->
   <section class="flex-grow p-8">
     <h2 class="text-3xl font-bold text-purple-200 mb-6">Available Items</h2>
-    <div id="itemsList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- Items dynamically inserted here -->
-    </div>
+    <div id="itemsList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
   </section>
 
   <!-- Footer -->
@@ -43,20 +41,50 @@
   <!-- Admin Dashboard -->
   <div id="adminPanel" class="hidden p-8 bg-purple-950 border-t border-purple-700">
     <h2 class="text-2xl font-bold text-purple-300 mb-6">Admin Dashboard</h2>
-    <form onsubmit="addItem(event)" class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700 max-w-lg">
+
+    <!-- Add Item -->
+    <form onsubmit="addItem(event)" class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700 max-w-lg mb-8">
+      <h3 class="text-lg font-semibold text-purple-200 mb-4">Add Item</h3>
       <input id="itemTitle" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" placeholder="Item Title" required />
       <textarea id="itemDesc" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" placeholder="Description" required></textarea>
       <input id="itemPrice" type="number" step="0.01" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" placeholder="Price" required />
       <input id="itemLink" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-4 rounded" placeholder="Roblox Link" required />
       <button type="submit" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-semibold transition w-full">Add Item</button>
     </form>
+
+    <!-- Manage Admins -->
+    <div class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700 max-w-2xl">
+      <h3 class="text-lg font-semibold text-purple-200 mb-4">Admin Accounts</h3>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="text-purple-300 border-b border-purple-700">
+            <th class="p-2">Username</th>
+            <th class="p-2">Password</th>
+            <th class="p-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="adminTable"></tbody>
+      </table>
+      <button id="addAdminBtn" onclick="createAdmin()" class="hidden mt-4 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded text-white font-semibold transition">➕ Add New Admin</button>
+    </div>
   </div>
 
   <script>
-    const ADMIN_USER = "ben&frosty";
-    const ADMIN_PASS = "i23ur8wh^382"; // Change this!
+    // Default admins with roles
+    const defaultAdmins = [
+      { username: "ben", password: "ben123", role: "chief" },
+      { username: "mxybeyuli", password: "mxy123", role: "chief" },
+      { username: "kolify", password: "kolify123", role: "normal" }
+    ];
 
+    // Load data
+    let admins = JSON.parse(localStorage.getItem("admins")) || defaultAdmins;
     let items = JSON.parse(localStorage.getItem("items")) || [];
+    let currentAdmin = null;
+
+    function saveAdmins() {
+      localStorage.setItem("admins", JSON.stringify(admins));
+    }
 
     function renderItems() {
       const list = document.getElementById("itemsList");
@@ -78,6 +106,30 @@
       });
     }
 
+    function renderAdmins() {
+      const table = document.getElementById("adminTable");
+      table.innerHTML = "";
+      admins.forEach((admin, idx) => {
+        table.innerHTML += `
+          <tr class="border-b border-purple-700">
+            <td class="p-2">${admin.username}</td>
+            <td class="p-2">${admin.password}</td>
+            <td class="p-2">
+              <button onclick="editAdmin(${idx})" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white text-sm">Edit</button>
+              ${currentAdmin.role === "chief" ? `<button onclick="deleteAdmin(${idx})" class="bg-red-600 hover:bg-red-500 px-3 py-1 rounded text-white text-sm ml-2">Delete</button>` : ""}
+            </td>
+          </tr>
+        `;
+      });
+
+      // Only chief admins can add new admins
+      if (currentAdmin && currentAdmin.role === "chief") {
+        document.getElementById("addAdminBtn").classList.remove("hidden");
+      } else {
+        document.getElementById("addAdminBtn").classList.add("hidden");
+      }
+    }
+
     function toggleLogin() {
       document.getElementById("loginModal").classList.toggle("hidden");
     }
@@ -85,11 +137,14 @@
     function login() {
       const user = document.getElementById("username").value;
       const pass = document.getElementById("password").value;
-      if (user === ADMIN_USER && pass === ADMIN_PASS) {
+      const found = admins.find(a => a.username === user && a.password === pass);
+      if (found) {
+        currentAdmin = found;
         toggleLogin();
         document.getElementById("adminPanel").classList.remove("hidden");
         document.querySelectorAll(".adminBtn").forEach(btn => btn.classList.remove("hidden"));
-        alert("✅ Admin logged in!");
+        renderAdmins();
+        alert("✅ Logged in as " + found.username + " (" + found.role + ")");
       } else {
         alert("❌ Invalid credentials");
       }
@@ -101,7 +156,6 @@
       const desc = document.getElementById("itemDesc").value;
       const price = document.getElementById("itemPrice").value;
       const link = document.getElementById("itemLink").value;
-
       items.push({ title, desc, price, link });
       localStorage.setItem("items", JSON.stringify(items));
       renderItems();
@@ -113,6 +167,42 @@
         items.splice(idx, 1);
         localStorage.setItem("items", JSON.stringify(items));
         renderItems();
+      }
+    }
+
+    function editAdmin(idx) {
+      if (currentAdmin.role !== "chief" && admins[idx].username !== currentAdmin.username) {
+        return alert("⚠️ You can only edit your own account!");
+      }
+      const newUser = prompt("Enter new username:", admins[idx].username);
+      const newPass = prompt("Enter new password:", admins[idx].password);
+      if (newUser && newPass) {
+        admins[idx].username = newUser;
+        admins[idx].password = newPass;
+        saveAdmins();
+        renderAdmins();
+        alert("✅ Admin updated");
+      }
+    }
+
+    function deleteAdmin(idx) {
+      if (currentAdmin.role !== "chief") return;
+      if (admins[idx].username === currentAdmin.username) return alert("⚠️ You cannot delete yourself!");
+      if (confirm("Delete this admin?")) {
+        admins.splice(idx, 1);
+        saveAdmins();
+        renderAdmins();
+      }
+    }
+
+    function createAdmin() {
+      const newUser = prompt("Enter new admin username:");
+      const newPass = prompt("Enter new admin password:");
+      if (newUser && newPass) {
+        admins.push({ username: newUser, password: newPass, role: "normal" });
+        saveAdmins();
+        renderAdmins();
+        alert("✅ New admin created");
       }
     }
 
