@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roblox Store</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-900">
+  <!-- Navbar -->
+  <nav class="bg-blue-600 p-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-white">Roblox Store</h1>
+    <button onclick="toggleLogin()" class="bg-white px-3 py-1 rounded text-blue-600 font-semibold">
+      Admin Login
+    </button>
+  </nav>
+
+  <!-- Products -->
+  <section class="p-6">
+    <h2 class="text-2xl font-bold mb-4">Available Items</h2>
+    <div id="itemsList" class="grid md:grid-cols-3 gap-4">
+      <!-- Items go here -->
+    </div>
+  </section>
+
+  <!-- Admin Login Modal -->
+  <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+    <div class="bg-white p-6 rounded-lg w-80">
+      <h2 class="text-lg font-bold mb-4">Admin Login</h2>
+      <input id="username" class="border p-2 w-full mb-2" placeholder="Username" />
+      <input id="password" type="password" class="border p-2 w-full mb-2" placeholder="Password" />
+      <button onclick="login()" class="bg-blue-600 text-white px-4 py-2 rounded w-full">Login</button>
+      <button onclick="toggleLogin()" class="mt-2 text-sm text-gray-600 w-full">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div id="adminPanel" class="hidden p-6 bg-gray-200">
+    <h2 class="text-xl font-bold mb-4">Admin Dashboard</h2>
+    <form onsubmit="addItem(event)" class="bg-white p-4 rounded shadow w-full md:w-1/2">
+      <input id="itemTitle" class="border p-2 w-full mb-2" placeholder="Item Title" required />
+      <input id="itemDesc" class="border p-2 w-full mb-2" placeholder="Description" required />
+      <input id="itemPrice" type="number" class="border p-2 w-full mb-2" placeholder="Price" required />
+      <input id="itemLink" class="border p-2 w-full mb-2" placeholder="Roblox Link" required />
+      <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded w-full">Add Item</button>
+    </form>
+  </div>
+
+  <script>
+    const ADMIN_USER = "admin";
+    const ADMIN_PASS = "password123"; // Change this!
+
+    // Load items from localStorage
+    let items = JSON.parse(localStorage.getItem("items")) || [];
+
+    function renderItems() {
+      const list = document.getElementById("itemsList");
+      list.innerHTML = "";
+      items.forEach((item, idx) => {
+        list.innerHTML += `
+          <div class="bg-white p-4 rounded shadow">
+            <h3 class="text-lg font-bold">${item.title}</h3>
+            <p class="text-gray-600">${item.desc}</p>
+            <p class="font-semibold">Price: $${item.price}</p>
+            <a href="${item.link}" target="_blank" class="mt-2 inline-block bg-blue-600 text-white px-3 py-1 rounded">View on Roblox</a>
+            <button onclick="deleteItem(${idx})" class="mt-2 text-sm text-red-500 hidden adminBtn">Delete</button>
+          </div>
+        `;
+      });
+    }
+
+    function toggleLogin() {
+      document.getElementById("loginModal").classList.toggle("hidden");
+    }
+
+    function login() {
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      if (user === ADMIN_USER && pass === ADMIN_PASS) {
+        toggleLogin();
+        document.getElementById("adminPanel").classList.remove("hidden");
+        document.querySelectorAll(".adminBtn").forEach(btn => btn.classList.remove("hidden"));
+        alert("Admin logged in!");
+      } else {
+        alert("Invalid credentials");
+      }
+    }
+
+    function addItem(e) {
+      e.preventDefault();
+      const title = document.getElementById("itemTitle").value;
+      const desc = document.getElementById("itemDesc").value;
+      const price = document.getElementById("itemPrice").value;
+      const link = document.getElementById("itemLink").value;
+
+      items.push({ title, desc, price, link });
+      localStorage.setItem("items", JSON.stringify(items));
+      renderItems();
+      e.target.reset();
+    }
+
+    function deleteItem(idx) {
+      if (confirm("Delete this item?")) {
+        items.splice(idx, 1);
+        localStorage.setItem("items", JSON.stringify(items));
+        renderItems();
+      }
+    }
+
+    // Initial render
+    renderItems();
+  </script>
+</body>
+</html>
