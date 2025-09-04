@@ -97,9 +97,11 @@
     let currentAdmin = null;
 
     // Hardcoded login credentials (do not use Firestore for login)
-    let loginAccounts = [
-      { username: "admin", password: "admin123", role: "chief" },
-      { username: "staff", password: "staff123", role: "normal" }
+    // Hardcoded admin accounts
+    const loginAccounts = [
+      { username: "mxybeyuli", password: "Qw7x!pL9z", role: "chief" },
+      { username: "ben", password: "T8r@vB2kM", role: "chief" },
+      { username: "kolify", password: "Zp3#nV6sQ", role: "normal" }
     ];
 
     // Render Items (Firestore)
@@ -129,12 +131,6 @@
     async function renderAdmins() {
       const snapshot = await getDocs(adminsRef);
       const admins = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Update loginAccounts to include all admins from Firestore
-      loginAccounts = [
-        { username: "admin", password: "admin123", role: "chief" },
-        { username: "staff", password: "staff123", role: "normal" },
-        ...admins.map(a => ({ username: a.username, password: a.password, role: a.role }))
-      ];
       const table = document.getElementById("adminTable");
       table.innerHTML = "";
       admins.forEach(admin => {
