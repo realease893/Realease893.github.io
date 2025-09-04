@@ -73,7 +73,7 @@
   <!-- Firebase + App Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, setDoc, doc, deleteDoc, updateDoc } 
+    import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc, updateDoc } 
       from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
     // Firebase config
@@ -215,7 +215,16 @@
       document.getElementById("loginModal").classList.toggle("hidden");
     }
 
-    // Load initial
+    // Make functions global so onclick works
+    window.login = login;
+    window.toggleLogin = toggleLogin;
+    window.addItem = addItem;
+    window.deleteItem = deleteItem;
+    window.createAdmin = createAdmin;
+    window.editAdmin = editAdmin;
+    window.deleteAdmin = deleteAdmin;
+
+    // Initial load
     renderItems();
   </script>
 </body>
