@@ -96,7 +96,13 @@
 
     let currentAdmin = null;
 
-    // Render Items
+    // Hardcoded login credentials (do not use Firestore for login)
+    const loginAccounts = [
+      { username: "admin", password: "admin123", role: "chief" },
+      { username: "staff", password: "staff123", role: "normal" }
+    ];
+
+    // Render Items (Firestore)
     async function renderItems() {
       const snapshot = await getDocs(itemsRef);
       const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -119,7 +125,7 @@
       });
     }
 
-    // Render Admins
+    // Render Admins (Firestore)
     async function renderAdmins() {
       const snapshot = await getDocs(adminsRef);
       const admins = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -143,13 +149,11 @@
       }
     }
 
-    // Login
-    async function login() {
+    // Login (local only)
+    function login() {
       const user = document.getElementById("username").value;
       const pass = document.getElementById("password").value;
-      const snapshot = await getDocs(adminsRef);
-      const admins = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      const found = admins.find(a => a.username === user && a.password === pass);
+      const found = loginAccounts.find(a => a.username === user && a.password === pass);
       if (found) {
         currentAdmin = found;
         toggleLogin();
@@ -162,7 +166,7 @@
       }
     }
 
-    // Add Item
+    // Add Item (Firestore)
     async function addItem(e) {
       e.preventDefault();
       const title = document.getElementById("itemTitle").value;
@@ -174,7 +178,7 @@
       e.target.reset();
     }
 
-    // Delete Item
+    // Delete Item (Firestore)
     async function deleteItem(id) {
       if (confirm("Delete this item?")) {
         await deleteDoc(doc(db, "items", id));
@@ -182,7 +186,7 @@
       }
     }
 
-    // Edit Admin
+    // Edit Admin (Firestore)
     async function editAdmin(id) {
       const newUser = prompt("Enter new username:");
       const newPass = prompt("Enter new password:");
@@ -192,7 +196,7 @@
       }
     }
 
-    // Delete Admin
+    // Delete Admin (Firestore)
     async function deleteAdmin(id) {
       if (confirm("Delete this admin?")) {
         await deleteDoc(doc(db, "admins", id));
@@ -200,7 +204,7 @@
       }
     }
 
-    // Create Admin
+    // Create Admin (Firestore)
     async function createAdmin() {
       const newUser = prompt("Enter new admin username:");
       const newPass = prompt("Enter new admin password:");
