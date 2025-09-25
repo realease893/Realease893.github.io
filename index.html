@@ -27,9 +27,12 @@
   <!-- Navbar -->
   <nav class="bg-purple-950/80 backdrop-blur-lg border-b border-purple-700 px-6 py-4 flex justify-between items-center shadow-lg">
     <h1 class="text-2xl font-extrabold text-purple-300 tracking-wider">CorexCartel Shop</h1>
-    <div>
-      <span id="userStatus" class="mr-4 text-purple-300 hidden"><i class="fas fa-user-shield mr-1"></i> Admin</span>
-      <button id="logoutBtn" onclick="logout()" class="hidden bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg text-white font-semibold transition mr-2">
+    <div class="flex items-center space-x-4">
+      <button onclick="toggleFeedback()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-white font-semibold transition">
+        <i class="fas fa-comment-dots mr-2"></i>Feedback
+      </button>
+      <span id="userStatus" class="text-purple-300 hidden"><i class="fas fa-user-shield mr-1"></i> Admin</span>
+      <button id="logoutBtn" onclick="logout()" class="hidden bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg text-white font-semibold transition">
         Logout
       </button>
       <button id="loginBtn" onclick="toggleLogin()" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-white font-semibold transition">
@@ -43,53 +46,18 @@
     <h2 class="text-3xl font-bold text-purple-200 mb-6">Available Items</h2>
     <div id="itemsList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"></div>
     
-    <!-- Feedback Section (Visible to all users) -->
-    <div class="max-w-4xl mx-auto mt-8">
-      <div class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700">
-        <h3 class="text-2xl font-bold text-purple-200 mb-4">Send Private Feedback</h3>
-        <p class="text-gray-300 mb-4">Have suggestions or issues? Send us private feedback that only admins can see.</p>
-        <form onsubmit="submitFeedback(event)" id="feedbackForm">
-          <div class="mb-4">
-            <label class="block text-purple-300 mb-2">Your Name (Optional)</label>
-            <input id="feedbackName" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="Enter your name (optional)" />
-          </div>
-          <div class="mb-4">
-            <label class="block text-purple-300 mb-2">Feedback Type</label>
-            <select id="feedbackType" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" required>
-              <option value="">Select type</option>
-              <option value="suggestion">Suggestion</option>
-              <option value="issue">Issue/Bug Report</option>
-              <option value="general">General Feedback</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div class="mb-4">
-            <label class="block text-purple-300 mb-2">Feedback</label>
-            <textarea id="feedbackText" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="Tell us what you think..." rows="4" required></textarea>
-          </div>
-          <button type="submit" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded text-white font-semibold transition">Submit Feedback</button>
-        </form>
+    <!-- Reviews Section (Public - Under Products) -->
+    <div class="max-w-6xl mx-auto mt-12">
+      <h3 class="text-2xl font-bold text-purple-200 mb-6">Customer Reviews</h3>
+      <div id="allReviewsList" class="space-y-4 mb-8">
+        <!-- All reviews will be loaded here -->
       </div>
-    </div>
-  </section>
-
-  <!-- Item Detail Page -->
-  <section id="itemDetailSection" class="hidden flex-grow p-8 fade-in">
-    <button onclick="goBack()" class="mb-6 text-purple-300 hover:text-purple-200 flex items-center">
-      <i class="fas fa-arrow-left mr-2"></i> Back to Products
-    </button>
-    <div id="itemDetail" class="max-w-4xl mx-auto"></div>
-    
-    <!-- Reviews Section (Public) -->
-    <div id="reviewsSection" class="max-w-4xl mx-auto mt-12">
-      <h3 class="text-2xl font-bold text-purple-200 mb-4">Customer Reviews</h3>
-      <div id="reviewsList" class="mb-6"></div>
       
       <!-- Add Review Form -->
-      <div id="reviewFormContainer" class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700">
+      <div class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700 max-w-2xl mx-auto">
         <h4 class="text-lg font-semibold text-purple-200 mb-4">Add Your Review</h4>
         <div id="reviewLimitMessage" class="bg-yellow-900/50 border border-yellow-700 text-yellow-200 p-3 rounded mb-4 hidden">
-          <i class="fas fa-exclamation-circle mr-2"></i>You can only leave one review per item.
+          <i class="fas fa-exclamation-circle mr-2"></i>You can only leave one review.
         </div>
         <form onsubmit="addReview(event)" id="reviewForm">
           <div class="mb-4">
@@ -112,6 +80,50 @@
             <textarea id="reviewText" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="Write your review here..." rows="4" required></textarea>
           </div>
           <button type="submit" id="submitReviewBtn" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded text-white font-semibold transition">Submit Review</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Item Detail Page -->
+  <section id="itemDetailSection" class="hidden flex-grow p-8 fade-in">
+    <button onclick="goBack()" class="mb-6 text-purple-300 hover:text-purple-200 flex items-center">
+      <i class="fas fa-arrow-left mr-2"></i> Back to Products
+    </button>
+    <div id="itemDetail" class="max-w-4xl mx-auto"></div>
+  </section>
+
+  <!-- Feedback Page -->
+  <section id="feedbackSection" class="hidden flex-grow p-8 fade-in">
+    <button onclick="goBackFromFeedback()" class="mb-6 text-purple-300 hover:text-purple-200 flex items-center">
+      <i class="fas fa-arrow-left mr-2"></i> Back to Products
+    </button>
+    
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-3xl font-bold text-purple-200 mb-6">Send Private Feedback</h2>
+      <p class="text-gray-300 mb-6">Have suggestions or issues? Send us private feedback that only admins can see.</p>
+      
+      <div class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700">
+        <form onsubmit="submitFeedback(event)" id="feedbackForm">
+          <div class="mb-4">
+            <label class="block text-purple-300 mb-2">Your Name (Optional)</label>
+            <input id="feedbackName" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="Enter your name (optional)" />
+          </div>
+          <div class="mb-4">
+            <label class="block text-purple-300 mb-2">Feedback Type</label>
+            <select id="feedbackType" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" required>
+              <option value="">Select type</option>
+              <option value="suggestion">Suggestion</option>
+              <option value="issue">Issue/Bug Report</option>
+              <option value="general">General Feedback</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="block text-purple-300 mb-2">Feedback</label>
+            <textarea id="feedbackText" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="Tell us what you think..." rows="4" required></textarea>
+          </div>
+          <button type="submit" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded text-white font-semibold transition">Submit Feedback</button>
         </form>
       </div>
     </div>
@@ -242,6 +254,7 @@
         document.getElementById("userStatus").classList.remove("hidden");
         document.getElementById("adminEmailDisplay").textContent = user.email;
         renderItems();
+        renderAllReviews(); // Load all reviews
         renderFeedback(); // Load feedback for admin
       } else {
         // User is signed out
@@ -250,6 +263,7 @@
         document.getElementById("logoutBtn").classList.add("hidden");
         document.getElementById("userStatus").classList.add("hidden");
         renderItems();
+        renderAllReviews(); // Load all reviews
       }
     });
 
@@ -285,6 +299,50 @@
       });
     }
 
+    // Render All Reviews (Public - Under Products)
+    async function renderAllReviews() {
+      const q = query(reviewsRef, orderBy("timestamp", "desc"));
+      const snapshot = await getDocs(q);
+      const reviews = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      const reviewsList = document.getElementById("allReviewsList");
+      
+      // Check if user has already reviewed
+      userReviewId = null;
+      const userName = document.getElementById("reviewerName").value || getStoredUserName();
+      if (userName) {
+        const userReview = reviews.find(review => review.reviewerName === userName);
+        if (userReview) {
+          userReviewId = userReview.id;
+        }
+      }
+      
+      // Update review form based on whether user has already reviewed
+      updateReviewForm();
+      
+      if (reviews.length === 0) {
+        reviewsList.innerHTML = '<p class="text-gray-400 italic text-center py-8">No reviews yet. Be the first to leave a review!</p>';
+        return;
+      }
+      
+      reviewsList.innerHTML = reviews.map(review => `
+        <div class="bg-purple-800 p-4 rounded-lg fade-in relative">
+          <div class="flex justify-between items-center mb-2">
+            <h4 class="font-semibold text-purple-200">${review.reviewerName}</h4>
+            <span class="text-yellow-400">
+              ${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}
+            </span>
+          </div>
+          <p class="text-gray-300">${review.text}</p>
+          <p class="text-gray-500 text-sm mt-2">${new Date(review.timestamp?.toDate()).toLocaleDateString()}</p>
+          ${review.id === userReviewId ? `
+            <button onclick="deleteReview('${review.id}')" class="absolute top-3 right-3 text-red-400 hover:text-red-300 text-sm">
+              <i class="fas fa-trash-alt"></i> Delete
+            </button>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
     // Check if user is admin (any logged in user is admin)
     function isAdmin() {
       return auth.currentUser !== null;
@@ -317,9 +375,6 @@
             <a href="${item.link}" target="_blank" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-white font-semibold transition inline-block">View on Roblox</a>
           </div>
         `;
-        
-        // Load reviews for this item
-        await renderReviews(itemId);
       }
     }
 
@@ -331,48 +386,16 @@
       userReviewId = null;
     }
 
-    // Render Reviews (Public)
-    async function renderReviews(itemId) {
-      const q = query(reviewsRef, where("itemId", "==", itemId), orderBy("timestamp", "desc"));
-      const snapshot = await getDocs(q);
-      const reviews = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      const reviewsList = document.getElementById("reviewsList");
-      
-      // Check if user has already reviewed this item
-      userReviewId = null;
-      const userName = document.getElementById("reviewerName").value || getStoredUserName();
-      if (userName) {
-        const userReview = reviews.find(review => review.reviewerName === userName);
-        if (userReview) {
-          userReviewId = userReview.id;
-        }
-      }
-      
-      // Update review form based on whether user has already reviewed
-      updateReviewForm();
-      
-      if (reviews.length === 0) {
-        reviewsList.innerHTML = '<p class="text-gray-400 italic">No reviews yet. Be the first to review this item!</p>';
-        return;
-      }
-      
-      reviewsList.innerHTML = reviews.map(review => `
-        <div class="bg-purple-800 p-4 rounded-lg mb-4 fade-in relative">
-          <div class="flex justify-between items-center mb-2">
-            <h4 class="font-semibold text-purple-200">${review.reviewerName}</h4>
-            <span class="text-yellow-400">
-              ${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}
-            </span>
-          </div>
-          <p class="text-gray-300">${review.text}</p>
-          <p class="text-gray-500 text-sm mt-2">${new Date(review.timestamp?.toDate()).toLocaleDateString()}</p>
-          ${review.id === userReviewId ? `
-            <button onclick="deleteReview('${review.id}')" class="absolute top-3 right-3 text-red-400 hover:text-red-300 text-sm">
-              <i class="fas fa-trash-alt"></i> Delete
-            </button>
-          ` : ''}
-        </div>
-      `).join('');
+    // Go back to products from feedback
+    function goBackFromFeedback() {
+      document.getElementById("feedbackSection").classList.add("hidden");
+      document.getElementById("productsSection").classList.remove("hidden");
+    }
+
+    // Toggle Feedback Page
+    function toggleFeedback() {
+      document.getElementById("productsSection").classList.add("hidden");
+      document.getElementById("feedbackSection").classList.remove("hidden");
     }
 
     // Render Feedback (Admin Only)
@@ -414,12 +437,11 @@
 
     // Update review form based on whether user has already reviewed
     function updateReviewForm() {
-      const reviewFormContainer = document.getElementById("reviewFormContainer");
       const reviewLimitMessage = document.getElementById("reviewLimitMessage");
       const submitReviewBtn = document.getElementById("submitReviewBtn");
       
       if (userReviewId) {
-        // User has already reviewed this item
+        // User has already reviewed
         reviewLimitMessage.classList.remove("hidden");
         submitReviewBtn.disabled = true;
         submitReviewBtn.classList.add("opacity-50", "cursor-not-allowed");
@@ -444,7 +466,6 @@
     // Add Review (Public)
     async function addReview(e) {
       e.preventDefault();
-      if (!currentItemId) return;
       
       const reviewerName = document.getElementById("reviewerName").value;
       const rating = parseInt(document.getElementById("reviewRating").value);
@@ -454,7 +475,6 @@
       storeUserName(reviewerName);
       
       await addDoc(reviewsRef, {
-        itemId: currentItemId,
         reviewerName,
         rating,
         text,
@@ -463,7 +483,7 @@
       
       document.getElementById("reviewForm").reset();
       resetStars();
-      await renderReviews(currentItemId);
+      await renderAllReviews();
       alert("Review submitted successfully!");
     }
 
@@ -486,6 +506,9 @@
       document.getElementById("feedbackForm").reset();
       alert("Thank you for your feedback! Only admins can see this.");
       
+      // Go back to products
+      goBackFromFeedback();
+      
       // If admin is logged in, refresh the feedback list
       if (isAdmin()) {
         renderFeedback();
@@ -497,7 +520,7 @@
       if (confirm("Are you sure you want to delete your review?")) {
         await deleteDoc(doc(db, "reviews", reviewId));
         userReviewId = null;
-        await renderReviews(currentItemId);
+        await renderAllReviews();
         alert("Review deleted successfully!");
       }
     }
@@ -647,6 +670,8 @@
     window.deleteItem = deleteItem;
     window.showItemDetail = showItemDetail;
     window.goBack = goBack;
+    window.goBackFromFeedback = goBackFromFeedback;
+    window.toggleFeedback = toggleFeedback;
     window.addReview = addReview;
     window.deleteReview = deleteReview;
     window.submitFeedback = submitFeedback;
@@ -655,6 +680,7 @@
 
     // Initial load
     renderItems();
+    renderAllReviews();
     setupStarRating();
   </script>
 </body>
