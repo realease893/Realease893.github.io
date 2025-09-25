@@ -6,25 +6,46 @@
   <title>CorexCartel Shop</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body class="bg-gradient-to-br from-purple-900 via-purple-800 to-black text-gray-200 min-h-screen flex flex-col">
 
   <!-- Navbar -->
   <nav class="bg-purple-950/80 backdrop-blur-lg border-b border-purple-700 px-6 py-4 flex justify-between items-center shadow-lg">
     <h1 class="text-2xl font-extrabold text-purple-300 tracking-wider">CorexCartel Shop</h1>
-    <button onclick="toggleLogin()" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-white font-semibold transition">
-      Admin Login
-    </button>
+    <div>
+      <span id="userStatus" class="mr-4 text-purple-300 hidden"><i class="fas fa-user-shield mr-1"></i> Admin</span>
+      <button id="logoutBtn" onclick="logout()" class="hidden bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg text-white font-semibold transition mr-2">
+        Logout
+      </button>
+      <button id="loginBtn" onclick="toggleLogin()" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-white font-semibold transition">
+        Admin Login
+      </button>
+    </div>
   </nav>
 
   <!-- Products -->
-  <section id="productsSection" class="flex-grow p-8">
+  <section id="productsSection" class="flex-grow p-8 fade-in">
     <h2 class="text-3xl font-bold text-purple-200 mb-6">Available Items</h2>
     <div id="itemsList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
   </section>
 
   <!-- Item Detail Page -->
-  <section id="itemDetailSection" class="hidden flex-grow p-8">
+  <section id="itemDetailSection" class="hidden flex-grow p-8 fade-in">
     <button onclick="goBack()" class="mb-6 text-purple-300 hover:text-purple-200 flex items-center">
       <i class="fas fa-arrow-left mr-2"></i> Back to Products
     </button>
@@ -36,8 +57,11 @@
       <div id="reviewsList" class="mb-6"></div>
       
       <!-- Add Review Form -->
-      <div class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700">
+      <div id="reviewFormContainer" class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700">
         <h4 class="text-lg font-semibold text-purple-200 mb-4">Add Your Review</h4>
+        <div id="reviewLimitMessage" class="bg-yellow-900/50 border border-yellow-700 text-yellow-200 p-3 rounded mb-4 hidden">
+          <i class="fas fa-exclamation-circle mr-2"></i>You can only leave one review per item.
+        </div>
         <form onsubmit="addReview(event)" id="reviewForm">
           <div class="mb-4">
             <label class="block text-purple-300 mb-2">Your Name</label>
@@ -58,31 +82,38 @@
             <label class="block text-purple-300 mb-2">Review</label>
             <textarea id="reviewText" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="Write your review here..." rows="4" required></textarea>
           </div>
-          <button type="submit" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded text-white font-semibold transition">Submit Review</button>
+          <button type="submit" id="submitReviewBtn" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded text-white font-semibold transition">Submit Review</button>
         </form>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="bg-purple-950/80 border-t border-purple-700 p-4 text-center text-sm text-purple-300">
-    © 2025 CorexCartel Shop. All rights reserved.
-  </footer>
-
   <!-- Admin Login Modal -->
   <div id="loginModal" class="hidden fixed inset-0 bg-black/70 flex justify-center items-center z-50">
     <div class="bg-purple-950 p-8 rounded-xl shadow-xl w-96 border border-purple-700">
       <h2 class="text-xl font-bold text-purple-300 mb-4">Admin Login</h2>
-      <input id="username" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" placeholder="Username" />
-      <input id="password" type="password" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-4 rounded" placeholder="Password" />
+      <div id="loginError" class="bg-red-900/50 border border-red-700 text-red-200 p-3 rounded mb-4 hidden">
+        <i class="fas fa-exclamation-circle mr-2"></i><span id="errorText"></span>
+      </div>
+      <input id="email" type="email" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" placeholder="Email" />
+      <input id="loginPassword" type="password" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-4 rounded" placeholder="Password" />
       <button onclick="login()" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded w-full font-semibold transition">Login</button>
       <button onclick="toggleLogin()" class="mt-3 text-sm text-purple-400 hover:text-purple-300 w-full">Cancel</button>
+      <div class="mt-4 text-xs text-purple-400 text-center">
+        <p>Only authorized administrators have access</p>
+      </div>
     </div>
   </div>
 
   <!-- Admin Dashboard -->
-  <div id="adminPanel" class="hidden p-8 bg-purple-950 border-t border-purple-700">
-    <h2 class="text-2xl font-bold text-purple-300 mb-6">Admin Dashboard</h2>
+  <div id="adminPanel" class="hidden p-8 bg-purple-950 border-t border-purple-700 fade-in">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-purple-300">Admin Dashboard</h2>
+      <div class="flex items-center">
+        <span id="adminEmailDisplay" class="text-purple-300 mr-4"><i class="fas fa-user-shield mr-1"></i> Admin</span>
+        <button onclick="logout()" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded text-white font-semibold transition">Logout</button>
+      </div>
+    </div>
 
     <!-- Add Item -->
     <form onsubmit="addItem(event)" class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700 max-w-lg mb-8">
@@ -105,29 +136,38 @@
       <button type="submit" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-semibold transition w-full">Add Item</button>
     </form>
 
-    <!-- Manage Admins -->
-    <div class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700 max-w-2xl">
-      <h3 class="text-lg font-semibold text-purple-200 mb-4">Admin Accounts</h3>
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="text-purple-300 border-b border-purple-700">
-            <th class="p-2">Username</th>
-            <th class="p-2">Password</th>
-            <th class="p-2">Role</th>
-            <th class="p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="adminTable"></tbody>
-      </table>
-      <button id="addAdminBtn" onclick="createAdmin()" class="hidden mt-4 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded text-white font-semibold transition">➕ Add New Admin</button>
+    <!-- Admin Info -->
+    <div class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700 max-w-lg">
+      <h3 class="text-lg font-semibold text-purple-200 mb-4">Admin Information</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-purple-300 text-sm">Username</label>
+          <p class="text-white">mxybeyuli</p>
+        </div>
+        <div>
+          <label class="block text-purple-300 text-sm">Role</label>
+          <p class="text-white">Chief Administrator</p>
+        </div>
+        <div>
+          <label class="block text-purple-300 text-sm">Contact</label>
+          <p class="text-white">DM @mxybeyuli on Discord for assistance</p>
+        </div>
+      </div>
     </div>
   </div>
+
+  <!-- Footer -->
+  <footer class="bg-purple-950/80 border-t border-purple-700 p-4 text-center text-sm text-purple-300">
+    © 2025 CorexCartel Shop. All rights reserved.
+  </footer>
 
   <!-- Firebase + App Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc, updateDoc, query, where, orderBy } 
       from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } 
+      from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
     // Firebase config
     const firebaseConfig = {
@@ -142,21 +182,34 @@
     // Init Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     // Refs
     const itemsRef = collection(db, "items");
-    const adminsRef = collection(db, "admins");
     const reviewsRef = collection(db, "reviews");
 
-    let currentAdmin = null;
     let currentItemId = null;
+    let userReviewId = null; // Track if user has already reviewed this item
 
-    // Hardcoded login credentials
-    const loginAccounts = [
-      { username: "mxybeyuli", password: "Qw7x!pL9z", role: "chief" },
-      { username: "ben", password: "T8r@vB2kM", role: "chief" },
-      { username: "kolify", password: "Zp3#nV6sQ", role: "normal" }
-    ];
+    // Check if user is logged in
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in
+        document.getElementById("adminPanel").classList.remove("hidden");
+        document.getElementById("loginBtn").classList.add("hidden");
+        document.getElementById("logoutBtn").classList.remove("hidden");
+        document.getElementById("userStatus").classList.remove("hidden");
+        document.getElementById("adminEmailDisplay").textContent = user.email;
+        renderItems();
+      } else {
+        // User is signed out
+        document.getElementById("adminPanel").classList.add("hidden");
+        document.getElementById("loginBtn").classList.remove("hidden");
+        document.getElementById("logoutBtn").classList.add("hidden");
+        document.getElementById("userStatus").classList.add("hidden");
+        renderItems();
+      }
+    });
 
     // Render Items (Firestore)
     async function renderItems() {
@@ -164,9 +217,15 @@
       const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       const list = document.getElementById("itemsList");
       list.innerHTML = "";
+      
+      if (items.length === 0) {
+        list.innerHTML = '<p class="text-gray-400 col-span-3 text-center py-8">No items available yet. Check back soon!</p>';
+        return;
+      }
+      
       items.forEach(item => {
         list.innerHTML += `
-          <div class="bg-purple-900 border border-purple-700 p-5 rounded-xl shadow-lg flex flex-col justify-between cursor-pointer hover:scale-105 transition-transform duration-300" onclick="showItemDetail('${item.id}')">
+          <div class="bg-purple-900 border border-purple-700 p-5 rounded-xl shadow-lg flex flex-col justify-between cursor-pointer hover:scale-105 transition-transform duration-300 fade-in" onclick="showItemDetail('${item.id}')">
             <div>
               <h3 class="text-xl font-bold text-purple-200">${item.title}</h3>
               <p class="text-gray-400 mt-2 line-clamp-2">${item.desc}</p>
@@ -177,17 +236,21 @@
             </div>
             <div class="mt-4 flex justify-between items-center">
               <span class="text-purple-300 font-medium">Click to view details</span>
-              ${currentAdmin ? `<button onclick="event.stopPropagation(); deleteItem('${item.id}')" class="adminBtn text-sm text-red-400 hover:text-red-300">Delete</button>` : ""}
+              ${isAdmin() ? `<button onclick="event.stopPropagation(); deleteItem('${item.id}')" class="adminBtn text-sm text-red-400 hover:text-red-300">Delete</button>` : ""}
             </div>
           </div>
         `;
       });
     }
 
+    // Check if user is admin (any logged in user is admin)
+    function isAdmin() {
+      return auth.currentUser !== null;
+    }
+
     // Show Item Detail
     async function showItemDetail(itemId) {
       currentItemId = itemId;
-      const docRef = doc(db, "items", itemId);
       const snapshot = await getDocs(itemsRef);
       const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       const item = items.find(i => i.id === itemId);
@@ -198,12 +261,12 @@
         
         const itemDetail = document.getElementById("itemDetail");
         itemDetail.innerHTML = `
-          <div class="bg-purple-900 border border-purple-700 p-6 rounded-xl shadow-lg">
+          <div class="bg-purple-900 border border-purple-700 p-6 rounded-xl shadow-lg fade-in">
             <h2 class="text-2xl font-bold text-purple-200 mb-4">${item.title}</h2>
             <p class="text-gray-300 mb-6">${item.desc}</p>
-            <div class="mb-6">
-              ${item.price ? `<p class="text-xl font-semibold text-green-400">$${item.price}</p>` : ''}
-              ${item.robuxPrice ? `<p class="text-xl font-semibold text-yellow-400">${item.robuxPrice} Robux</p>` : ''}
+            <div class="mb-6 flex space-x-6">
+              ${item.price ? `<div class="bg-green-900/30 border border-green-700 p-3 rounded-lg"><p class="text-xl font-semibold text-green-400">$${item.price}</p></div>` : ''}
+              ${item.robuxPrice ? `<div class="bg-yellow-900/30 border border-yellow-700 p-3 rounded-lg"><p class="text-xl font-semibold text-yellow-400">${item.robuxPrice} Robux</p></div>` : ''}
             </div>
             <div class="bg-purple-800 p-4 rounded-lg mb-6">
               <h3 class="text-lg font-semibold text-purple-200 mb-2">How to Purchase</h3>
@@ -223,6 +286,7 @@
       document.getElementById("itemDetailSection").classList.add("hidden");
       document.getElementById("productsSection").classList.remove("hidden");
       currentItemId = null;
+      userReviewId = null;
     }
 
     // Render Reviews
@@ -232,13 +296,26 @@
       const reviews = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       const reviewsList = document.getElementById("reviewsList");
       
+      // Check if user has already reviewed this item
+      userReviewId = null;
+      const userName = document.getElementById("reviewerName").value || getStoredUserName();
+      if (userName) {
+        const userReview = reviews.find(review => review.reviewerName === userName);
+        if (userReview) {
+          userReviewId = userReview.id;
+        }
+      }
+      
+      // Update review form based on whether user has already reviewed
+      updateReviewForm();
+      
       if (reviews.length === 0) {
         reviewsList.innerHTML = '<p class="text-gray-400 italic">No reviews yet. Be the first to review this item!</p>';
         return;
       }
       
       reviewsList.innerHTML = reviews.map(review => `
-        <div class="bg-purple-800 p-4 rounded-lg mb-4">
+        <div class="bg-purple-800 p-4 rounded-lg mb-4 fade-in relative">
           <div class="flex justify-between items-center mb-2">
             <h4 class="font-semibold text-purple-200">${review.reviewerName}</h4>
             <span class="text-yellow-400">
@@ -247,8 +324,42 @@
           </div>
           <p class="text-gray-300">${review.text}</p>
           <p class="text-gray-500 text-sm mt-2">${new Date(review.timestamp?.toDate()).toLocaleDateString()}</p>
+          ${review.id === userReviewId ? `
+            <button onclick="deleteReview('${review.id}')" class="absolute top-3 right-3 text-red-400 hover:text-red-300 text-sm">
+              <i class="fas fa-trash-alt"></i> Delete
+            </button>
+          ` : ''}
         </div>
       `).join('');
+    }
+
+    // Update review form based on whether user has already reviewed
+    function updateReviewForm() {
+      const reviewFormContainer = document.getElementById("reviewFormContainer");
+      const reviewLimitMessage = document.getElementById("reviewLimitMessage");
+      const submitReviewBtn = document.getElementById("submitReviewBtn");
+      
+      if (userReviewId) {
+        // User has already reviewed this item
+        reviewLimitMessage.classList.remove("hidden");
+        submitReviewBtn.disabled = true;
+        submitReviewBtn.classList.add("opacity-50", "cursor-not-allowed");
+      } else {
+        // User hasn't reviewed yet
+        reviewLimitMessage.classList.add("hidden");
+        submitReviewBtn.disabled = false;
+        submitReviewBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      }
+    }
+
+    // Get stored username from localStorage
+    function getStoredUserName() {
+      return localStorage.getItem('reviewerName') || '';
+    }
+
+    // Store username in localStorage
+    function storeUserName(name) {
+      localStorage.setItem('reviewerName', name);
     }
 
     // Add Review
@@ -259,6 +370,9 @@
       const reviewerName = document.getElementById("reviewerName").value;
       const rating = parseInt(document.getElementById("reviewRating").value);
       const text = document.getElementById("reviewText").value;
+      
+      // Store the username for future reference
+      storeUserName(reviewerName);
       
       await addDoc(reviewsRef, {
         itemId: currentItemId,
@@ -272,6 +386,16 @@
       resetStars();
       await renderReviews(currentItemId);
       alert("Review submitted successfully!");
+    }
+
+    // Delete Review
+    async function deleteReview(reviewId) {
+      if (confirm("Are you sure you want to delete your review?")) {
+        await deleteDoc(doc(db, "reviews", reviewId));
+        userReviewId = null;
+        await renderReviews(currentItemId);
+        alert("Review deleted successfully!");
+      }
     }
 
     // Setup star rating
@@ -290,6 +414,12 @@
       });
       
       document.getElementById('ratingStars').addEventListener('mouseleave', resetStars);
+      
+      // Load stored username if exists
+      const storedName = getStoredUserName();
+      if (storedName) {
+        document.getElementById('reviewerName').value = storedName;
+      }
     }
     
     function setStarRating(rating) {
@@ -315,50 +445,35 @@
       highlightStars(currentRating);
     }
 
-    // Render Admins (Firestore)
-    async function renderAdmins() {
-      const snapshot = await getDocs(adminsRef);
-      const admins = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      const table = document.getElementById("adminTable");
-      table.innerHTML = "";
-      admins.forEach(admin => {
-        table.innerHTML += `
-          <tr class="border-b border-purple-700">
-            <td class="p-2">${admin.username}</td>
-            <td class="p-2">${admin.password}</td>
-            <td class="p-2">${admin.role}</td>
-            <td class="p-2">
-              <button onclick="editAdmin('${admin.id}')" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white text-sm">Edit</button>
-              ${currentAdmin?.role === "chief" ? `<button onclick="deleteAdmin('${admin.id}')" class="bg-red-600 hover:bg-red-500 px-3 py-1 rounded text-white text-sm ml-2">Delete</button>` : ""}
-            </td>
-          </tr>
-        `;
-      });
-      if (currentAdmin?.role === "chief") {
-        document.getElementById("addAdminBtn").classList.remove("hidden");
+    // Login with Firebase Auth
+    async function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("loginPassword").value;
+      const errorDiv = document.getElementById("loginError");
+      
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        toggleLogin();
+      } catch (error) {
+        errorDiv.classList.remove("hidden");
+        document.getElementById("errorText").textContent = "Invalid email or password";
+        console.error("Login error:", error);
       }
     }
 
-    // Login (local only)
-    function login() {
-      const user = document.getElementById("username").value;
-      const pass = document.getElementById("password").value;
-      const found = loginAccounts.find(a => a.username === user && a.password === pass);
-      if (found) {
-        currentAdmin = found;
-        toggleLogin();
-        document.getElementById("adminPanel").classList.remove("hidden");
-        renderAdmins();
-        renderItems();
-        alert(`✅ Logged in as ${found.username} (${found.role})`);
-      } else {
-        alert("❌ Invalid credentials");
-      }
+    // Logout
+    function logout() {
+      signOut(auth);
     }
 
     // Add Item (Firestore)
     async function addItem(e) {
       e.preventDefault();
+      if (!isAdmin()) {
+        alert("You must be logged in as admin to add items");
+        return;
+      }
+      
       const title = document.getElementById("itemTitle").value;
       const desc = document.getElementById("itemDesc").value;
       const price = document.getElementById("itemPrice").value;
@@ -384,71 +499,40 @@
 
     // Delete Item (Firestore)
     async function deleteItem(id) {
+      if (!isAdmin()) {
+        alert("You must be logged in as admin to delete items");
+        return;
+      }
+      
       if (confirm("Delete this item?")) {
         await deleteDoc(doc(db, "items", id));
         renderItems();
       }
     }
 
-    // Edit Admin (Firestore)
-    async function editAdmin(id) {
-      const newUser = prompt("Enter new username:");
-      const newPass = prompt("Enter new password:");
-      if (newUser && newPass) {
-        await updateDoc(doc(db, "admins", id), { username: newUser, password: newPass });
-        renderAdmins();
-      }
-    }
-
-    // Delete Admin (Firestore)
-    async function deleteAdmin(id) {
-      if (confirm("Delete this admin?")) {
-        await deleteDoc(doc(db, "admins", id));
-        renderAdmins();
-      }
-    }
-
-    // Create Admin (Firestore)
-    async function createAdmin() {
-      const newUser = prompt("Enter new admin username:");
-      const newPass = prompt("Enter new admin password:");
-      let newRole = prompt("Enter admin role (normal/chief):", "normal");
-      newRole = (newRole === "chief") ? "chief" : "normal";
-      if (newUser && newPass) {
-        await addDoc(adminsRef, { username: newUser, password: newPass, role: newRole });
-        renderAdmins();
-      }
-    }
-
     // Toggle Login Modal
     function toggleLogin() {
-      document.getElementById("loginModal").classList.toggle("hidden");
+      const modal = document.getElementById("loginModal");
+      modal.classList.toggle("hidden");
+      document.getElementById("loginError").classList.add("hidden");
+      document.getElementById("email").value = "";
+      document.getElementById("loginPassword").value = "";
     }
 
     // Make functions global so onclick works
     window.login = login;
+    window.logout = logout;
     window.toggleLogin = toggleLogin;
     window.addItem = addItem;
     window.deleteItem = deleteItem;
-    window.createAdmin = createAdmin;
-    window.editAdmin = editAdmin;
-    window.deleteAdmin = deleteAdmin;
     window.showItemDetail = showItemDetail;
     window.goBack = goBack;
     window.addReview = addReview;
+    window.deleteReview = deleteReview;
 
     // Initial load
     renderItems();
     setupStarRating();
   </script>
-
-  <style>
-    .line-clamp-2 {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-  </style>
 </body>
 </html>
