@@ -1,234 +1,716 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Item Shop</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CorexCartel Shop</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://kit.fontawesome.com/a2e0e6ad5b.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-purple-800 to-black text-gray-200 min-h-screen flex flex-col">
+
+  <!-- Navbar -->
+  <nav class="bg-purple-950/80 backdrop-blur-lg border-b border-purple-700 px-6 py-4 flex justify-between items-center shadow-lg">
+    <h1 class="text-2xl font-extrabold text-purple-300 tracking-wider">CorexCartel Shop</h1>
+    <div>
+      <span id="userStatus" class="mr-4 text-purple-300 hidden"><i class="fas fa-user-shield mr-1"></i> Admin</span>
+      <button id="logoutBtn" onclick="logout()" class="hidden bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg text-white font-semibold transition mr-2">
+        Logout
+      </button>
+      <button id="loginBtn" onclick="toggleLogin()" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-white font-semibold transition">
+        Admin Login
+      </button>
+    </div>
+  </nav>
+
+  <!-- Products -->
+  <section id="productsSection" class="flex-grow p-8 fade-in">
+    <h2 class="text-3xl font-bold text-purple-200 mb-6">Available Items</h2>
+    <div id="itemsList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </section>
+
+  <!-- Item Detail Page -->
+  <section id="itemDetailSection" class="hidden flex-grow p-8 fade-in">
+    <button onclick="goBack()" class="mb-6 text-purple-300 hover:text-purple-200 flex items-center">
+      <i class="fas fa-arrow-left mr-2"></i> Back to Products
+    </button>
+    <div id="itemDetail" class="max-w-4xl mx-auto"></div>
+    
+    <!-- Reviews Section -->
+    <div id="reviewsSection" class="max-w-4xl mx-auto mt-12">
+      <h3 class="text-2xl font-bold text-purple-200 mb-4">Customer Reviews</h3>
+      <div id="reviewsList" class="mb-6"></div>
+      
+      <!-- Add Review Form -->
+      <div id="reviewFormContainer" class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700">
+        <h4 class="text-lg font-semibold text-purple-200 mb-4">Add Your Review</h4>
+
+        <div id="reviewErrorMessage" class="bg-red-900/40 border border-red-700 text-red-200 p-3 rounded mb-4 hidden">
+          <i class="fas fa-exclamation-circle mr-2"></i><span id="reviewErrorText"></span>
+        </div>
+
+        <div id="reviewLimitMessage" class="bg-yellow-900/50 border border-yellow-700 text-yellow-200 p-3 rounded mb-4 hidden">
+          <i class="fas fa-exclamation-circle mr-2"></i>You can only leave one review per item.
+        </div>
+
+        <form onsubmit="addReview(event)" id="reviewForm">
+          <div class="mb-4">
+            <label class="block text-purple-300 mb-2">Your Name</label>
+            <input id="reviewerName" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="Enter your name" required />
+          </div>
+          <div class="mb-4">
+            <label class="block text-purple-300 mb-2">Rating</label>
+            <div class="flex space-x-1" id="ratingStars">
+              <i class="far fa-star text-yellow-400 text-xl cursor-pointer" data-rating="1"></i>
+              <i class="far fa-star text-yellow-400 text-xl cursor-pointer" data-rating="2"></i>
+              <i class="far fa-star text-yellow-400 text-xl cursor-pointer" data-rating="3"></i>
+              <i class="far fa-star text-yellow-400 text-xl cursor-pointer" data-rating="4"></i>
+              <i class="far fa-star text-yellow-400 text-xl cursor-pointer" data-rating="5"></i>
+            </div>
+            <input type="hidden" id="reviewRating" value="5" required />
+          </div>
+          <div class="mb-4">
+            <label class="block text-purple-300 mb-2">Review</label>
+            <textarea id="reviewText" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="Write your review here..." rows="4" required></textarea>
+          </div>
+          <button type="submit" id="submitReviewBtn" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded text-white font-semibold transition">Submit Review</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Admin Login Modal -->
+  <div id="loginModal" class="hidden fixed inset-0 bg-black/70 flex justify-center items-center z-50">
+    <div class="bg-purple-950 p-8 rounded-xl shadow-xl w-96 border border-purple-700">
+      <h2 class="text-xl font-bold text-purple-300 mb-4">Admin Login</h2>
+      <div id="loginError" class="bg-red-900/50 border border-red-700 text-red-200 p-3 rounded mb-4 hidden">
+        <i class="fas fa-exclamation-circle mr-2"></i><span id="errorText"></span>
+      </div>
+      <input id="email" type="email" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" placeholder="Email" />
+      <input id="loginPassword" type="password" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-4 rounded" placeholder="Password" />
+      <button onclick="login()" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded w-full font-semibold transition">Login</button>
+      <button onclick="toggleLogin()" class="mt-3 text-sm text-purple-400 hover:text-purple-300 w-full">Cancel</button>
+      <div class="mt-4 text-xs text-purple-400 text-center">
+        <p>Only authorized administrators have access</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div id="adminPanel" class="hidden p-8 bg-purple-950 border-t border-purple-700 fade-in">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-purple-300">Admin Dashboard</h2>
+      <div class="flex items-center">
+        <span id="adminEmailDisplay" class="text-purple-300 mr-4"><i class="fas fa-user-shield mr-1"></i> Admin</span>
+        <button onclick="logout()" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded text-white font-semibold transition">Logout</button>
+      </div>
+    </div>
+
+    <!-- Add Item -->
+    <form onsubmit="addItem(event)" class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700 max-w-lg mb-8">
+      <h3 class="text-lg font-semibold text-purple-200 mb-4">Add Item</h3>
+      <input id="itemTitle" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" placeholder="Item Title" required />
+      <textarea id="itemDesc" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" placeholder="Description" required></textarea>
+      
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <label class="block text-purple-300 mb-1">Price ($)</label>
+          <input id="itemPrice" type="number" step="0.01" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="USD" />
+        </div>
+        <div>
+          <label class="block text-purple-300 mb-1">Price (Robux)</label>
+          <input id="itemRobuxPrice" type="number" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="Robux" />
+        </div>
+      </div>
+      
+      <input id="itemLink" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-4 rounded" placeholder="Roblox Link" required />
+      <button type="submit" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-semibold transition w-full">Add Item</button>
+    </form>
+
+    <!-- Admin Info -->
+    <div class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700 max-w-lg mb-8">
+      <h3 class="text-lg font-semibold text-purple-200 mb-4">Admin Information</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-purple-300 text-sm">Username</label>
+          <p class="text-white">mxybeyuli</p>
+        </div>
+        <div>
+          <label class="block text-purple-300 text-sm">Role</label>
+          <p class="text-white">Chief Administrator</p>
+        </div>
+        <div>
+          <label class="block text-purple-300 text-sm">Contact</label>
+          <p class="text-white">DM @mxybeyuli on Discord for assistance</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Feedback & Moderation -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Feedback (Admin only) -->
+      <div class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700">
+        <h3 class="text-lg font-semibold text-purple-200 mb-4">Customer Feedback</h3>
+
+        <div id="feedbackErrorMessage" class="bg-red-900/40 border border-red-700 text-red-200 p-3 rounded mb-4 hidden">
+          <i class="fas fa-exclamation-circle mr-2"></i><span id="feedbackErrorText"></span>
+        </div>
+
+        <div id="feedbackList" class="space-y-4 max-h-96 overflow-auto mb-4"></div>
+
+        <form onsubmit="addFeedback(event)" class="mt-2">
+          <input id="feedbackName" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" placeholder="Your Name" required />
+          <textarea id="feedbackMessage" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" rows="3" placeholder="Write your feedback..." required></textarea>
+          <button type="submit" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded text-white font-semibold transition">Submit Feedback</button>
+        </form>
+      </div>
+
+      <!-- Reviews Moderation (Admin only) -->
+      <div class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700">
+        <h3 class="text-lg font-semibold text-purple-200 mb-4">Reviews Moderation</h3>
+        <div id="adminReviewsList" class="space-y-4 max-h-96 overflow-auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-purple-950/80 border-t border-purple-700 p-4 text-center text-sm text-purple-300">
+    © 2025 CorexCartel Shop. All rights reserved.
+  </footer>
+
+  <!-- Firebase + App Script -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import {
-      getFirestore, collection, getDocs, addDoc, deleteDoc,
-      doc, query, where, orderBy, serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-    import {
-      getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+      getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc,
+      query, where, orderBy, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } 
+      from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-    // Firebase config
+    // --- Firebase config ---
     const firebaseConfig = {
-      apiKey: "YOUR_KEY",
-      authDomain: "YOUR_DOMAIN",
-      projectId: "YOUR_PROJECT",
-      storageBucket: "YOUR_BUCKET",
-      messagingSenderId: "YOUR_SENDER",
-      appId: "YOUR_APP"
+      apiKey: "AIzaSyAlDbDQ4R-rbNbs_yIezyTom6KESvFcsZE",
+      authDomain: "corexcartel-shop.firebaseapp.com",
+      projectId: "corexcartel-shop",
+      storageBucket: "corexcartel-shop.appspot.com",
+      messagingSenderId: "926705977434",
+      appId: "1:926705977434:web:9d708c50ce66a9ae67f063"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth();
+    const auth = getAuth(app);
 
+    // --- Refs ---
     const itemsRef = collection(db, "items");
     const reviewsRef = collection(db, "reviews");
     const feedbackRef = collection(db, "feedback");
 
+    // --- State ---
     let currentItemId = null;
+    let bannedWords = ["spam", "scam", "fraud", "fake", "offensiveword"]; // add words here
 
-    // Spam filter words
-    const bannedWords = ["spam", "scam", "fake", "badword"];
-    function containsBannedWords(text) {
-      return bannedWords.some(w => text.toLowerCase().includes(w));
-    }
-
+    // --- Helpers ---
     function isAdmin() {
-      const user = auth.currentUser;
-      return user && user.email.endsWith("@admin.com");
+      return auth.currentUser !== null;
     }
 
-    // Render items
+    function containsBannedWords(text) {
+      if (!text) return false;
+      const lower = text.toLowerCase();
+      return bannedWords.some(w => {
+        if (!w) return false;
+        // whole word check
+        const re = new RegExp(`\\b${w.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\b`, "i");
+        return re.test(lower);
+      });
+    }
+
+    function showElement(id) { document.getElementById(id).classList.remove("hidden"); }
+    function hideElement(id) { document.getElementById(id).classList.add("hidden"); }
+
+    // --- Render Items ---
     async function renderItems() {
       const snapshot = await getDocs(itemsRef);
       const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      const container = document.getElementById("items");
-      container.innerHTML = "";
+      const list = document.getElementById("itemsList");
+      list.innerHTML = "";
+      if (items.length === 0) {
+        list.innerHTML = '<p class="text-gray-400 col-span-3 text-center py-8">No items available yet. Check back soon!</p>';
+        return;
+      }
       items.forEach(item => {
-        container.innerHTML += `
-          <div class="bg-purple-900 p-4 rounded-lg shadow-lg">
-            <h3 class="text-xl font-bold text-white">${item.title}</h3>
-            <p class="text-gray-300">${item.desc}</p>
-            <button onclick="openReviews('${item.id}')" class="mt-2 bg-yellow-500 px-3 py-1 rounded">View Reviews</button>
-            ${isAdmin() ? `<button onclick="deleteItem('${item.id}')" class="ml-2 text-red-400">Delete</button>` : ""}
-          </div>
-        `;
-      });
-    }
-
-    // Reviews modal
-    async function openReviews(itemId) {
-      currentItemId = itemId;
-      document.getElementById("reviewsModal").classList.remove("hidden");
-      renderReviews(itemId);
-    }
-
-    async function renderReviews(itemId) {
-      const snapshot = await getDocs(query(reviewsRef, where("itemId", "==", itemId), orderBy("timestamp", "desc")));
-      const reviews = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      const list = document.getElementById("reviewsList");
-      list.innerHTML = reviews.length ? "" : `<p class="text-gray-400">No reviews yet.</p>`;
-      reviews.forEach(r => {
-        const stars = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
         list.innerHTML += `
-          <div class="bg-purple-800 p-3 rounded mb-2 flex justify-between">
+          <div class="bg-purple-900 border border-purple-700 p-5 rounded-xl shadow-lg flex flex-col justify-between cursor-pointer hover:scale-105 transition-transform duration-300 fade-in" onclick="showItemDetail('${item.id}')">
             <div>
-              <p class="text-yellow-400">${stars}</p>
-              <p class="text-gray-200 font-bold">${r.name}</p>
-              <p class="text-gray-300">${r.text}</p>
+              <h3 class="text-xl font-bold text-purple-200">${escapeHtml(item.title)}</h3>
+              <p class="text-gray-400 mt-2 line-clamp-2">${escapeHtml(item.desc)}</p>
+              <div class="mt-3 flex space-x-4">
+                ${item.price ? `<p class="text-lg font-semibold text-green-400">$${item.price}</p>` : ''}
+                ${item.robuxPrice ? `<p class="text-lg font-semibold text-yellow-400">${item.robuxPrice} Robux</p>` : ''}
+              </div>
             </div>
-            ${isAdmin() ? `<button onclick="deleteReview('${r.id}')" class="text-red-400 text-sm">Delete</button>` : ""}
+            <div class="mt-4 flex justify-between items-center">
+              <span class="text-purple-300 font-medium">Click to view details</span>
+              ${isAdmin() ? `<button onclick="event.stopPropagation(); deleteItem('${item.id}')" class="adminBtn text-sm text-red-400 hover:text-red-300">Delete</button>` : ""}
+            </div>
           </div>
         `;
       });
     }
 
+    // Utility to escape text for HTML insertion
+    function escapeHtml(unsafe) {
+      if (unsafe === undefined || unsafe === null) return "";
+      return String(unsafe)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // --- Show item detail & reviews ---
+    async function showItemDetail(itemId) {
+      currentItemId = itemId;
+      try {
+        const itemDoc = await getDoc(doc(db, "items", itemId));
+        if (!itemDoc.exists()) return alert("Item not found");
+        const item = { id: itemDoc.id, ...itemDoc.data() };
+
+        document.getElementById("productsSection").classList.add("hidden");
+        document.getElementById("itemDetailSection").classList.remove("hidden");
+
+        document.getElementById("itemDetail").innerHTML = `
+          <div class="bg-purple-900 border border-purple-700 p-6 rounded-xl shadow-lg fade-in">
+            <h2 class="text-2xl font-bold text-purple-200 mb-4">${escapeHtml(item.title)}</h2>
+            <p class="text-gray-300 mb-6">${escapeHtml(item.desc)}</p>
+            <div class="mb-6 flex space-x-6">
+              ${item.price ? `<div class="bg-green-900/30 border border-green-700 p-3 rounded-lg"><p class="text-xl font-semibold text-green-400">$${item.price}</p></div>` : ''}
+              ${item.robuxPrice ? `<div class="bg-yellow-900/30 border border-yellow-700 p-3 rounded-lg"><p class="text-xl font-semibold text-yellow-400">${item.robuxPrice} Robux</p></div>` : ''}
+            </div>
+            <div class="bg-purple-800 p-4 rounded-lg mb-6">
+              <h3 class="text-lg font-semibold text-purple-200 mb-2">How to Purchase</h3>
+              <p class="text-gray-300">To buy this item, please DM <span class="font-bold text-purple-300">@mxybeyuli</span> on Discord with the item name and your preferred payment method.</p>
+            </div>
+            <a href="${escapeHtml(item.link)}" target="_blank" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-white font-semibold transition inline-block">View on Roblox</a>
+          </div>
+        `;
+
+        // put stored name into the review form
+        const stored = localStorage.getItem("corexShopReviewerName");
+        if (stored) document.getElementById("reviewerName").value = stored;
+
+        await renderReviews(itemId);
+      } catch (err) {
+        console.error("showItemDetail error:", err);
+        alert("Failed to load item details.");
+      }
+    }
+
+    function goBack() {
+      document.getElementById("itemDetailSection").classList.add("hidden");
+      document.getElementById("productsSection").classList.remove("hidden");
+      currentItemId = null;
+      hideElement("reviewErrorMessage");
+      hideElement("reviewLimitMessage");
+    }
+
+    // --- Reviews: render for single item (customers) ---
+    async function renderReviews(itemId) {
+      const reviewsList = document.getElementById("reviewsList");
+      reviewsList.innerHTML = `<p class="text-gray-400 italic">Loading reviews...</p>`;
+
+      try {
+        const q = query(reviewsRef, where("itemId", "==", itemId), orderBy("timestamp", "desc"));
+        let snapshot;
+        try {
+          snapshot = await getDocs(q);
+        } catch (innerErr) {
+          // fallback if ordering fails
+          snapshot = await getDocs(query(reviewsRef, where("itemId","==", itemId)));
+        }
+        const reviews = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        if (reviews.length === 0) {
+          reviewsList.innerHTML = '<p class="text-gray-400 italic">No reviews yet. Be the first to review this item!</p>';
+          return;
+        }
+
+        reviewsList.innerHTML = reviews.map(r => {
+          const date = r.timestamp?.toDate ? r.timestamp.toDate().toLocaleDateString() : "Just now";
+          const reviewer = escapeHtml(r.reviewerName || r.name || "Anonymous");
+          const text = escapeHtml(r.text || "");
+          const rating = Number(r.rating) || 0;
+          const stars = "★".repeat(rating) + "☆".repeat(Math.max(0, 5 - rating));
+          const adminDeleteBtn = isAdmin() ? `<button onclick="deleteReview('${r.id}')" class="absolute top-3 right-3 text-red-400 hover:text-red-300 text-sm"><i class="fas fa-trash-alt"></i></button>` : "";
+          return `
+            <div class="bg-purple-800 p-4 rounded-lg mb-4 fade-in relative">
+              <div class="flex justify-between items-center mb-2">
+                <h4 class="font-semibold text-purple-200">${reviewer}</h4>
+                <span class="text-yellow-400">${stars}</span>
+              </div>
+              <p class="text-gray-300">${text}</p>
+              <p class="text-gray-500 text-sm mt-2">${date}</p>
+              ${adminDeleteBtn}
+            </div>
+          `;
+        }).join("");
+      } catch (err) {
+        console.error("renderReviews error:", err);
+        reviewsList.innerHTML = '<p class="text-red-400">Failed to load reviews.</p>';
+      }
+    }
+
+    // --- Add review ---
     async function addReview(e) {
       e.preventDefault();
+      hideElement("reviewErrorMessage");
+      hideElement("reviewLimitMessage");
       if (!currentItemId) return;
-      const name = document.getElementById("reviewerName").value.trim();
-      const text = document.getElementById("reviewText").value.trim();
-      const rating = parseInt(document.getElementById("reviewRating").value);
+      const reviewerName = (document.getElementById("reviewerName").value || "").trim();
+      const rating = parseInt(document.getElementById("reviewRating").value || "5", 10);
+      const text = (document.getElementById("reviewText").value || "").trim();
 
-      if (!name || !text) return alert("Fill all fields.");
-      if (containsBannedWords(text)) return alert("Review contains banned words.");
+      if (!reviewerName || !text) {
+        showReviewError("Please enter your name and review text.");
+        return;
+      }
+      // Ban words check
+      if (containsBannedWords(reviewerName) || containsBannedWords(text)) {
+        showReviewError("Your name or review contains disallowed words. Edit and try again.");
+        return;
+      }
 
-      await addDoc(reviewsRef, {
-        itemId: currentItemId, name, text, rating, timestamp: serverTimestamp()
-      });
-      e.target.reset();
-      renderReviews(currentItemId);
+      // Prevent duplicate (one review per name per item)
+      try {
+        const dupQ = query(reviewsRef, where("itemId", "==", currentItemId), where("reviewerName", "==", reviewerName));
+        const dupSnap = await getDocs(dupQ);
+        if (!dupSnap.empty) {
+          showReviewLimit();
+          return;
+        }
+      } catch (err) {
+        // If query fails, continue (rare)
+        console.warn("Dup check error:", err);
+      }
+
+      // Store name locally
+      try { localStorage.setItem("corexShopReviewerName", reviewerName); } catch {}
+
+      // Add review
+      try {
+        await addDoc(reviewsRef, {
+          itemId: currentItemId,
+          reviewerName,
+          rating,
+          text,
+          timestamp: serverTimestamp()
+        });
+        document.getElementById("reviewForm").reset();
+        resetStars();
+        await renderReviews(currentItemId);
+      } catch (err) {
+        console.error("addReview error:", err);
+        showReviewError("Failed to submit review. Try again later.");
+      }
     }
 
-    async function deleteReview(id) {
+    function showReviewError(msg) {
+      const el = document.getElementById("reviewErrorMessage");
+      document.getElementById("reviewErrorText").textContent = msg;
+      el.classList.remove("hidden");
+    }
+    function showReviewLimit() {
+      document.getElementById("reviewLimitMessage").classList.remove("hidden");
+    }
+
+    // --- Delete review (admin only) ---
+    async function deleteReview(reviewId) {
+      if (!isAdmin()) return alert("Only admins can delete reviews.");
       if (!confirm("Delete this review?")) return;
-      await deleteDoc(doc(db, "reviews", id));
-      renderReviews(currentItemId);
+      try {
+        await deleteDoc(doc(db, "reviews", reviewId));
+        // refresh both admin and item views
+        if (currentItemId) await renderReviews(currentItemId);
+        await renderAdminReviews();
+      } catch (err) {
+        console.error("deleteReview error:", err);
+        alert("Failed to delete review.");
+      }
     }
 
-    // Feedback
-    async function sendFeedback(e) {
+    // --- Admin: render all reviews for moderation ---
+    async function renderAdminReviews() {
+      if (!isAdmin()) return;
+      const list = document.getElementById("adminReviewsList");
+      list.innerHTML = `<p class="text-gray-400 italic">Loading reviews...</p>`;
+      try {
+        const snap = await getDocs(query(reviewsRef, orderBy("timestamp", "desc")));
+        const reviews = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // fetch items titles map
+        const itemsSnap = await getDocs(itemsRef);
+        const itemsMap = {};
+        itemsSnap.docs.forEach(d => itemsMap[d.id] = d.data().title || "Item");
+
+        if (reviews.length === 0) {
+          list.innerHTML = '<p class="text-gray-400 italic">No reviews yet.</p>';
+          return;
+        }
+
+        list.innerHTML = reviews.map(r => {
+          const date = r.timestamp?.toDate ? r.timestamp.toDate().toLocaleString() : "Just now";
+          const reviewer = escapeHtml(r.reviewerName || "Anonymous");
+          const text = escapeHtml(r.text || "");
+          const title = escapeHtml(itemsMap[r.itemId] || r.itemId || "Unknown item");
+          const rating = Number(r.rating) || 0;
+          const stars = "★".repeat(rating) + "☆".repeat(Math.max(0, 5 - rating));
+          return `
+            <div class="bg-purple-800 p-4 rounded-lg mb-2 border border-purple-700 flex justify-between items-start">
+              <div>
+                <p class="text-yellow-400">${stars}</p>
+                <p class="text-purple-200 font-semibold">${reviewer} <span class="text-gray-400 text-sm">— ${title}</span></p>
+                <p class="text-gray-300 mt-1">${text}</p>
+                <p class="text-gray-500 text-xs mt-1">${date}</p>
+              </div>
+              <div class="ml-4">
+                <button onclick="deleteReview('${r.id}')" class="text-red-400 hover:text-red-300 text-sm"><i class="fas fa-trash-alt"></i> Delete</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      } catch (err) {
+        console.error("renderAdminReviews error:", err);
+        list.innerHTML = '<p class="text-red-400">Failed to load reviews.</p>';
+      }
+    }
+
+    // --- Feedback (admin only) ---
+    async function addFeedback(e) {
       e.preventDefault();
-      const name = document.getElementById("feedbackName").value.trim();
-      const message = document.getElementById("feedbackMessage").value.trim();
-      if (!name || !message) return alert("Fill all fields.");
-      if (containsBannedWords(message)) return alert("Feedback contains banned words.");
-      await addDoc(feedbackRef, { name, message, timestamp: serverTimestamp() });
-      e.target.reset();
-      alert("Feedback sent. Thank you!");
+      if (!isAdmin()) return alert("Only admins can submit feedback in this area.");
+      hideElement("feedbackErrorMessage");
+      const name = (document.getElementById("feedbackName").value || "").trim();
+      const message = (document.getElementById("feedbackMessage").value || "").trim();
+      if (!name || !message) {
+        showFeedbackError("Please enter name and message.");
+        return;
+      }
+      if (containsBannedWords(name) || containsBannedWords(message)) {
+        showFeedbackError("Name or message contains disallowed words.");
+        return;
+      }
+      try {
+        await addDoc(feedbackRef, { name, message, timestamp: serverTimestamp() });
+        document.getElementById("feedbackName").value = "";
+        document.getElementById("feedbackMessage").value = "";
+        await renderFeedback();
+      } catch (err) {
+        console.error("addFeedback error:", err);
+        showFeedbackError("Failed to submit feedback.");
+      }
     }
 
     async function renderFeedback() {
       if (!isAdmin()) return;
-      const snapshot = await getDocs(query(feedbackRef, orderBy("timestamp", "desc")));
-      const feedbacks = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       const list = document.getElementById("feedbackList");
-      list.innerHTML = "";
-      feedbacks.forEach(f => {
-        list.innerHTML += `
-          <div class="bg-purple-800 p-3 rounded mb-2 flex justify-between">
-            <div>
-              <p class="text-gray-200 font-bold">${f.name}</p>
-              <p class="text-gray-300">${f.message}</p>
+      list.innerHTML = `<p class="text-gray-400 italic">Loading feedback...</p>`;
+      try {
+        const snap = await getDocs(query(feedbackRef, orderBy("timestamp", "desc")));
+        const feedbacks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (feedbacks.length === 0) {
+          list.innerHTML = '<p class="text-gray-400 italic">No feedback yet.</p>';
+          return;
+        }
+        list.innerHTML = feedbacks.map(fb => {
+          const date = fb.timestamp?.toDate ? fb.timestamp.toDate().toLocaleString() : "Just now";
+          const name = escapeHtml(fb.name || "Anon");
+          const message = escapeHtml(fb.message || "");
+          return `
+            <div class="bg-purple-800 p-3 rounded-lg border border-purple-700 flex justify-between items-start">
+              <div>
+                <p class="text-purple-200 font-semibold">${name}</p>
+                <p class="text-gray-300 mt-1">${message}</p>
+                <p class="text-gray-500 text-xs mt-1">${date}</p>
+              </div>
+              <div class="ml-4">
+                <button onclick="deleteFeedback('${fb.id}')" class="text-red-400 hover:text-red-300 text-sm"><i class="fas fa-trash-alt"></i> Delete</button>
+              </div>
             </div>
-            <button onclick="deleteFeedback('${f.id}')" class="text-red-400 text-sm">Delete</button>
-          </div>
-        `;
-      });
+          `;
+        }).join("");
+      } catch (err) {
+        console.error("renderFeedback error:", err);
+        list.innerHTML = '<p class="text-red-400">Failed to load feedback.</p>';
+      }
     }
 
     async function deleteFeedback(id) {
+      if (!isAdmin()) return alert("Only admins can delete feedback.");
       if (!confirm("Delete this feedback?")) return;
-      await deleteDoc(doc(db, "feedback", id));
-      renderFeedback();
+      try {
+        await deleteDoc(doc(db, "feedback", id));
+        await renderFeedback();
+      } catch (err) {
+        console.error("deleteFeedback error:", err);
+        alert("Failed to delete feedback.");
+      }
     }
 
-    // Auth
-    onAuthStateChanged(auth, (user) => {
-      document.getElementById("adminPanel").classList.toggle("hidden", !isAdmin());
-      if (isAdmin()) renderFeedback();
-    });
+    function showFeedbackError(msg) {
+      const el = document.getElementById("feedbackErrorMessage");
+      document.getElementById("feedbackErrorText").textContent = msg;
+      el.classList.remove("hidden");
+    }
 
+    // --- Items management ---
+    async function addItem(e) {
+      e.preventDefault();
+      if (!isAdmin()) { alert("Must be logged in as admin"); return; }
+      const title = (document.getElementById("itemTitle").value || "").trim();
+      const desc = (document.getElementById("itemDesc").value || "").trim();
+      const price = document.getElementById("itemPrice").value || null;
+      const robuxPrice = document.getElementById("itemRobuxPrice").value || null;
+      const link = (document.getElementById("itemLink").value || "").trim();
+      if (!title || !desc || !link) { alert("Title, description and link required"); return; }
+      try {
+        await addDoc(itemsRef, { title, desc, price, robuxPrice, link });
+        e.target.reset();
+        await renderItems();
+        if (isAdmin()) await renderAdminReviews();
+      } catch (err) {
+        console.error("addItem error:", err);
+        alert("Failed to add item.");
+      }
+    }
+
+    async function deleteItem(id) {
+      if (!isAdmin()) return alert("Only admins can delete items.");
+      if (!confirm("Are you sure you want to delete this item?")) return;
+      try {
+        await deleteDoc(doc(db, "items", id));
+        await renderItems();
+      } catch (err) {
+        console.error("deleteItem error:", err);
+        alert("Failed to delete item.");
+      }
+    }
+
+    // --- Login / Logout ---
     async function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("loginPassword").value;
       try {
         await signInWithEmailAndPassword(auth, email, password);
         toggleLogin();
-      } catch (e) {
-        alert("Login failed: " + e.message);
+      } catch (error) {
+        document.getElementById("loginError").classList.remove("hidden");
+        document.getElementById("errorText").textContent = error.message || "Login failed";
       }
     }
-
     async function logout() {
-      await signOut(auth);
+      try {
+        await signOut(auth);
+        // UI will be updated via onAuthStateChanged
+      } catch (err) {
+        console.error("logout error:", err);
+      }
     }
-
     function toggleLogin() {
-      document.getElementById("loginModal").classList.toggle("hidden");
+      const modal = document.getElementById("loginModal");
+      modal.classList.toggle("hidden");
+      document.getElementById("loginError").classList.add("hidden");
+      document.getElementById("email").value = "";
+      document.getElementById("loginPassword").value = "";
     }
 
-    // Init
+    // --- Star rating UI ---
+    function setupStarRating() {
+      const stars = document.querySelectorAll('#ratingStars i');
+      stars.forEach(s => {
+        s.addEventListener('click', () => {
+          const rating = parseInt(s.getAttribute('data-rating'), 10);
+          document.getElementById('reviewRating').value = rating;
+          highlightStars(rating);
+        });
+        s.addEventListener('mouseover', () => {
+          highlightStars(parseInt(s.getAttribute('data-rating'), 10));
+        });
+      });
+      document.getElementById('ratingStars').addEventListener('mouseleave', () => {
+        const current = parseInt(document.getElementById('reviewRating').value || "5", 10);
+        highlightStars(current);
+      });
+      // set initial
+      highlightStars(parseInt(document.getElementById('reviewRating').value || "5", 10));
+    }
+    function highlightStars(rating) {
+      const stars = document.querySelectorAll('#ratingStars i');
+      stars.forEach((star, idx) => {
+        if (idx < rating) { star.classList.remove('far'); star.classList.add('fas'); }
+        else { star.classList.remove('fas'); star.classList.add('far'); }
+      });
+    }
+    function resetStars() {
+      document.getElementById('reviewRating').value = 5;
+      highlightStars(5);
+    }
+
+    // --- Auth listener to toggle admin UI & re-render admin lists ---
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("adminPanel").classList.remove("hidden");
+        document.getElementById("loginBtn").classList.add("hidden");
+        document.getElementById("logoutBtn").classList.remove("hidden");
+        document.getElementById("userStatus").classList.remove("hidden");
+        document.getElementById("adminEmailDisplay").textContent = user.email;
+        // Render admin-only lists
+        renderFeedback();
+        renderAdminReviews();
+      } else {
+        document.getElementById("adminPanel").classList.add("hidden");
+        document.getElementById("loginBtn").classList.remove("hidden");
+        document.getElementById("logoutBtn").classList.add("hidden");
+        document.getElementById("userStatus").classList.add("hidden");
+      }
+      // render items always
+      renderItems();
+      // if currently viewing an item, refresh reviews
+      if (currentItemId) renderReviews(currentItemId);
+    });
+
+    // --- Init on load ---
+    setupStarRating();
     renderItems();
-    window.openReviews = openReviews;
+
+    // Expose to window for inline onclicks
+    window.showItemDetail = showItemDetail;
+    window.goBack = goBack;
+    window.addItem = addItem;
+    window.deleteItem = deleteItem;
     window.addReview = addReview;
     window.deleteReview = deleteReview;
-    window.sendFeedback = sendFeedback;
+    window.addFeedback = addFeedback;
     window.deleteFeedback = deleteFeedback;
     window.login = login;
     window.logout = logout;
     window.toggleLogin = toggleLogin;
-    window.deleteItem = deleteItem;
+
   </script>
-</head>
-<body class="bg-purple-950 text-white p-6">
-  <h1 class="text-3xl font-bold mb-4">Item Shop</h1>
-  <div id="items" class="grid gap-4"></div>
-
-  <!-- Reviews Modal -->
-  <div id="reviewsModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center">
-    <div class="bg-purple-900 p-6 rounded-lg w-96">
-      <h2 class="text-xl font-bold mb-3">Reviews</h2>
-      <div id="reviewsList" class="mb-3"></div>
-      <form id="reviewForm" onsubmit="addReview(event)" class="space-y-2">
-        <input id="reviewerName" placeholder="Your Name" class="w-full p-2 rounded text-black">
-        <textarea id="reviewText" placeholder="Write a review..." class="w-full p-2 rounded text-black"></textarea>
-        <select id="reviewRating" class="w-full p-2 rounded text-black">
-          <option value="5">★★★★★</option>
-          <option value="4">★★★★</option>
-          <option value="3">★★★</option>
-          <option value="2">★★</option>
-          <option value="1">★</option>
-        </select>
-        <button type="submit" class="bg-yellow-500 px-3 py-1 rounded w-full">Submit Review</button>
-      </form>
-      <button onclick="document.getElementById('reviewsModal').classList.add('hidden')" class="mt-3 text-gray-300">Close</button>
-    </div>
-  </div>
-
-  <!-- Feedback Form -->
-  <div class="mt-8 bg-purple-900 p-4 rounded">
-    <h2 class="text-xl font-bold">Send Feedback</h2>
-    <form id="feedbackForm" onsubmit="sendFeedback(event)" class="space-y-2">
-      <input id="feedbackName" placeholder="Your Name" class="w-full p-2 rounded text-black">
-      <textarea id="feedbackMessage" placeholder="Your feedback..." class="w-full p-2 rounded text-black"></textarea>
-      <button type="submit" class="bg-green-500 px-3 py-1 rounded w-full">Send Feedback</button>
-    </form>
-  </div>
-
-  <!-- Admin Panel -->
-  <div id="adminPanel" class="hidden mt-8 bg-purple-800 p-4 rounded">
-    <h2 class="text-xl font-bold">Admin Feedback</h2>
-    <div id="feedbackList"></div>
-  </div>
 </body>
 </html>
