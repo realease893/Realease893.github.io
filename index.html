@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CorexCartel Shop</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gradient-to-br from-purple-900 via-purple-800 to-black text-gray-200 min-h-screen flex flex-col">
 
@@ -17,9 +18,50 @@
   </nav>
 
   <!-- Products -->
-  <section class="flex-grow p-8">
+  <section id="productsSection" class="flex-grow p-8">
     <h2 class="text-3xl font-bold text-purple-200 mb-6">Available Items</h2>
     <div id="itemsList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </section>
+
+  <!-- Item Detail Page -->
+  <section id="itemDetailSection" class="hidden flex-grow p-8">
+    <button onclick="goBack()" class="mb-6 text-purple-300 hover:text-purple-200 flex items-center">
+      <i class="fas fa-arrow-left mr-2"></i> Back to Products
+    </button>
+    <div id="itemDetail" class="max-w-4xl mx-auto"></div>
+    
+    <!-- Reviews Section -->
+    <div id="reviewsSection" class="max-w-4xl mx-auto mt-12">
+      <h3 class="text-2xl font-bold text-purple-200 mb-4">Customer Reviews</h3>
+      <div id="reviewsList" class="mb-6"></div>
+      
+      <!-- Add Review Form -->
+      <div class="bg-purple-900 p-6 rounded-lg shadow-lg border border-purple-700">
+        <h4 class="text-lg font-semibold text-purple-200 mb-4">Add Your Review</h4>
+        <form onsubmit="addReview(event)" id="reviewForm">
+          <div class="mb-4">
+            <label class="block text-purple-300 mb-2">Your Name</label>
+            <input id="reviewerName" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="Enter your name" required />
+          </div>
+          <div class="mb-4">
+            <label class="block text-purple-300 mb-2">Rating</label>
+            <div class="flex space-x-1" id="ratingStars">
+              <i class="far fa-star text-yellow-400 text-xl cursor-pointer" data-rating="1"></i>
+              <i class="far fa-star text-yellow-400 text-xl cursor-pointer" data-rating="2"></i>
+              <i class="far fa-star text-yellow-400 text-xl cursor-pointer" data-rating="3"></i>
+              <i class="far fa-star text-yellow-400 text-xl cursor-pointer" data-rating="4"></i>
+              <i class="far fa-star text-yellow-400 text-xl cursor-pointer" data-rating="5"></i>
+            </div>
+            <input type="hidden" id="reviewRating" value="5" required />
+          </div>
+          <div class="mb-4">
+            <label class="block text-purple-300 mb-2">Review</label>
+            <textarea id="reviewText" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="Write your review here..." rows="4" required></textarea>
+          </div>
+          <button type="submit" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded text-white font-semibold transition">Submit Review</button>
+        </form>
+      </div>
+    </div>
   </section>
 
   <!-- Footer -->
@@ -47,7 +89,18 @@
       <h3 class="text-lg font-semibold text-purple-200 mb-4">Add Item</h3>
       <input id="itemTitle" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" placeholder="Item Title" required />
       <textarea id="itemDesc" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" placeholder="Description" required></textarea>
-      <input id="itemPrice" type="number" step="0.01" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-3 rounded" placeholder="Price" required />
+      
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <label class="block text-purple-300 mb-1">Price ($)</label>
+          <input id="itemPrice" type="number" step="0.01" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="USD" />
+        </div>
+        <div>
+          <label class="block text-purple-300 mb-1">Price (Robux)</label>
+          <input id="itemRobuxPrice" type="number" class="border border-purple-600 bg-purple-800 text-white p-2 w-full rounded" placeholder="Robux" />
+        </div>
+      </div>
+      
       <input id="itemLink" class="border border-purple-600 bg-purple-800 text-white p-2 w-full mb-4 rounded" placeholder="Roblox Link" required />
       <button type="submit" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-semibold transition w-full">Add Item</button>
     </form>
@@ -73,7 +126,7 @@
   <!-- Firebase + App Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc, updateDoc } 
+    import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc, updateDoc, query, where, orderBy } 
       from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
     // Firebase config
@@ -93,11 +146,12 @@
     // Refs
     const itemsRef = collection(db, "items");
     const adminsRef = collection(db, "admins");
+    const reviewsRef = collection(db, "reviews");
 
     let currentAdmin = null;
+    let currentItemId = null;
 
-    // Hardcoded login credentials (do not use Firestore for login)
-    // Hardcoded admin accounts
+    // Hardcoded login credentials
     const loginAccounts = [
       { username: "mxybeyuli", password: "Qw7x!pL9z", role: "chief" },
       { username: "ben", password: "T8r@vB2kM", role: "chief" },
@@ -112,19 +166,153 @@
       list.innerHTML = "";
       items.forEach(item => {
         list.innerHTML += `
-          <div class="bg-purple-900 border border-purple-700 p-5 rounded-xl shadow-lg flex flex-col justify-between">
+          <div class="bg-purple-900 border border-purple-700 p-5 rounded-xl shadow-lg flex flex-col justify-between cursor-pointer hover:scale-105 transition-transform duration-300" onclick="showItemDetail('${item.id}')">
             <div>
               <h3 class="text-xl font-bold text-purple-200">${item.title}</h3>
-              <p class="text-gray-400 mt-2">${item.desc}</p>
-              <p class="text-lg font-semibold text-green-400 mt-3">$${item.price}</p>
+              <p class="text-gray-400 mt-2 line-clamp-2">${item.desc}</p>
+              <div class="mt-3 flex space-x-4">
+                ${item.price ? `<p class="text-lg font-semibold text-green-400">$${item.price}</p>` : ''}
+                ${item.robuxPrice ? `<p class="text-lg font-semibold text-yellow-400">${item.robuxPrice} Robux</p>` : ''}
+              </div>
             </div>
             <div class="mt-4 flex justify-between items-center">
-              <a href="${item.link}" target="_blank" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-white font-semibold transition">View on Roblox</a>
-              ${currentAdmin ? `<button onclick="deleteItem('${item.id}')" class="adminBtn text-sm text-red-400 hover:text-red-300">Delete</button>` : ""}
+              <span class="text-purple-300 font-medium">Click to view details</span>
+              ${currentAdmin ? `<button onclick="event.stopPropagation(); deleteItem('${item.id}')" class="adminBtn text-sm text-red-400 hover:text-red-300">Delete</button>` : ""}
             </div>
           </div>
         `;
       });
+    }
+
+    // Show Item Detail
+    async function showItemDetail(itemId) {
+      currentItemId = itemId;
+      const docRef = doc(db, "items", itemId);
+      const snapshot = await getDocs(itemsRef);
+      const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      const item = items.find(i => i.id === itemId);
+      
+      if (item) {
+        document.getElementById("productsSection").classList.add("hidden");
+        document.getElementById("itemDetailSection").classList.remove("hidden");
+        
+        const itemDetail = document.getElementById("itemDetail");
+        itemDetail.innerHTML = `
+          <div class="bg-purple-900 border border-purple-700 p-6 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold text-purple-200 mb-4">${item.title}</h2>
+            <p class="text-gray-300 mb-6">${item.desc}</p>
+            <div class="mb-6">
+              ${item.price ? `<p class="text-xl font-semibold text-green-400">$${item.price}</p>` : ''}
+              ${item.robuxPrice ? `<p class="text-xl font-semibold text-yellow-400">${item.robuxPrice} Robux</p>` : ''}
+            </div>
+            <div class="bg-purple-800 p-4 rounded-lg mb-6">
+              <h3 class="text-lg font-semibold text-purple-200 mb-2">How to Purchase</h3>
+              <p class="text-gray-300">To buy this item, please DM <span class="font-bold text-purple-300">@mxybeyuli</span> on Discord with the item name and your preferred payment method.</p>
+            </div>
+            <a href="${item.link}" target="_blank" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-white font-semibold transition inline-block">View on Roblox</a>
+          </div>
+        `;
+        
+        // Load reviews for this item
+        await renderReviews(itemId);
+      }
+    }
+
+    // Go back to products
+    function goBack() {
+      document.getElementById("itemDetailSection").classList.add("hidden");
+      document.getElementById("productsSection").classList.remove("hidden");
+      currentItemId = null;
+    }
+
+    // Render Reviews
+    async function renderReviews(itemId) {
+      const q = query(reviewsRef, where("itemId", "==", itemId), orderBy("timestamp", "desc"));
+      const snapshot = await getDocs(q);
+      const reviews = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      const reviewsList = document.getElementById("reviewsList");
+      
+      if (reviews.length === 0) {
+        reviewsList.innerHTML = '<p class="text-gray-400 italic">No reviews yet. Be the first to review this item!</p>';
+        return;
+      }
+      
+      reviewsList.innerHTML = reviews.map(review => `
+        <div class="bg-purple-800 p-4 rounded-lg mb-4">
+          <div class="flex justify-between items-center mb-2">
+            <h4 class="font-semibold text-purple-200">${review.reviewerName}</h4>
+            <span class="text-yellow-400">
+              ${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}
+            </span>
+          </div>
+          <p class="text-gray-300">${review.text}</p>
+          <p class="text-gray-500 text-sm mt-2">${new Date(review.timestamp?.toDate()).toLocaleDateString()}</p>
+        </div>
+      `).join('');
+    }
+
+    // Add Review
+    async function addReview(e) {
+      e.preventDefault();
+      if (!currentItemId) return;
+      
+      const reviewerName = document.getElementById("reviewerName").value;
+      const rating = parseInt(document.getElementById("reviewRating").value);
+      const text = document.getElementById("reviewText").value;
+      
+      await addDoc(reviewsRef, {
+        itemId: currentItemId,
+        reviewerName,
+        rating,
+        text,
+        timestamp: new Date()
+      });
+      
+      document.getElementById("reviewForm").reset();
+      resetStars();
+      await renderReviews(currentItemId);
+      alert("Review submitted successfully!");
+    }
+
+    // Setup star rating
+    function setupStarRating() {
+      const stars = document.querySelectorAll('#ratingStars i');
+      stars.forEach(star => {
+        star.addEventListener('click', function() {
+          const rating = parseInt(this.getAttribute('data-rating'));
+          setStarRating(rating);
+        });
+        
+        star.addEventListener('mouseover', function() {
+          const rating = parseInt(this.getAttribute('data-rating'));
+          highlightStars(rating);
+        });
+      });
+      
+      document.getElementById('ratingStars').addEventListener('mouseleave', resetStars);
+    }
+    
+    function setStarRating(rating) {
+      document.getElementById('reviewRating').value = rating;
+      highlightStars(rating);
+    }
+    
+    function highlightStars(rating) {
+      const stars = document.querySelectorAll('#ratingStars i');
+      stars.forEach((star, index) => {
+        if (index < rating) {
+          star.classList.remove('far');
+          star.classList.add('fas');
+        } else {
+          star.classList.remove('fas');
+          star.classList.add('far');
+        }
+      });
+    }
+    
+    function resetStars() {
+      const currentRating = parseInt(document.getElementById('reviewRating').value);
+      highlightStars(currentRating);
     }
 
     // Render Admins (Firestore)
@@ -174,8 +362,22 @@
       const title = document.getElementById("itemTitle").value;
       const desc = document.getElementById("itemDesc").value;
       const price = document.getElementById("itemPrice").value;
+      const robuxPrice = document.getElementById("itemRobuxPrice").value;
       const link = document.getElementById("itemLink").value;
-      await addDoc(itemsRef, { title, desc, price, link });
+      
+      // Ensure at least one price is provided
+      if (!price && !robuxPrice) {
+        alert("Please provide at least one price (USD or Robux)");
+        return;
+      }
+      
+      await addDoc(itemsRef, { 
+        title, 
+        desc, 
+        price: price || null, 
+        robuxPrice: robuxPrice || null, 
+        link 
+      });
       renderItems();
       e.target.reset();
     }
@@ -231,9 +433,22 @@
     window.createAdmin = createAdmin;
     window.editAdmin = editAdmin;
     window.deleteAdmin = deleteAdmin;
+    window.showItemDetail = showItemDetail;
+    window.goBack = goBack;
+    window.addReview = addReview;
 
     // Initial load
     renderItems();
+    setupStarRating();
   </script>
+
+  <style>
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
 </body>
 </html>
